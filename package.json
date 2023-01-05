@@ -1,0 +1,6 @@
+{
+  "devDependencies": {
+    "axios": "^1.2.2",
+    "qs": "^6.11.0"
+  }
+}
