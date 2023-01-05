@@ -5,7 +5,7 @@ let fs = require("fs");
 // let dev = true;
 let dev = false;
 
-let host = dev ? "http://127.0.0.1:90/api/" : "http://api.cbpc.ltd/";
+let host = dev ? "http://127.0.0.1:90/api/" : "http://10.8.1.25:100/api/";
 
 const mock = (data, time = Math.random() * 2000) =>
     new Promise((resolve) => {
