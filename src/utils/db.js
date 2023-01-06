@@ -43,7 +43,10 @@ let task = [{
         ...data
     }
     `,
-    item_handler: "",
+    item_callback: {
+        type: 'fn',
+        callback: ''
+    },
     valid: true,
 }, {
     id: 2,
@@ -59,7 +62,10 @@ let task = [{
         ...data
     }:false
     `,
-    item_handler: "",
+    item_callback: {
+        type: 'fn',
+        callback: ''
+    },
     valid: true,
 }, {
     id: 3,
@@ -83,7 +89,10 @@ let task = [{
     }
     return false
     `,
-    item_handler: "",
+    item_callback: {
+        type: 'api',
+        callback: '/test/234.json'
+    },
     valid: true,
 }]
 

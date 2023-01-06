@@ -12,6 +12,26 @@ const cfg = require('./utils/config')
 
 const timeFns = {}
 
+const getItemCallback = taskItem => {
+    let itemCallback = false;
+    if (taskItem.item_callback) {
+        let str = taskItem.item_callback.callback;
+        let type = taskItem.item_callback.type
+        if (type == 'fn') {
+            if (!str || str.trim().length == 0) {
+                str = 'return data'
+            }
+            itemCallback = fnLib.getFn(str)
+        } else if (type == 'db') {
+            itemCallback = (params) => axios({
+                url: str,
+                params
+            })
+        }
+
+    }
+    return itemCallback
+}
 
 /**
  * 执行一条任务
@@ -34,9 +54,18 @@ const taskHandler = taskItem => {
         db.addLog({ taskId: key, title: '开始执行', detail: '' })
         db.setTaskStatus({ taskId: key, status: cfg.TASK_STATUS.RUNNING });
     }
+
+    const itemCallback = getItemCallback(taskItem)
+
     const taskFn = async ({ removeTask = false, isComplete = false }) => {
         // 数据触发任务,触发后执行回调
-        let data = await axios(taskItem.api).then(res => res.data.map(apiCallback).filter(e => e)).catch(e => {
+        let data = await axios(taskItem.api).then(res => res.data.map(apiCallback).filter(e => e).map(params => {
+            if (itemCallback) {
+                itemCallback(params)
+            }
+            return params
+        })).catch(e => {
+            console.log(e)
             db.addLog({ taskId: key, title: '任务出错', detail: JSON.stringify(e) })
         })
 
