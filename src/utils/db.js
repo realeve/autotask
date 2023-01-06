@@ -2,6 +2,21 @@
 
 const { axios, mock } = require("./axios");
 
+
+const pushRTXInfo = params => axios({
+    url: '/319/b804147c6e.json',
+    params: {
+        ...params,
+        delaytime: 0,
+    },
+});
+
+module.exports.rtxMsg = async ({ url = false, msg, receiver = '10654' }) => pushRTXInfo({
+    title: "消息自动处理平台",
+    msg: msg + (url ? `，请([点击此处|${url}])查看详情）。` : '。'),
+    receiver
+})
+
 // 任务配置
 /*
 此部分由前台管理，此处为模拟数据，支持以下模式：
@@ -39,10 +54,10 @@ let task = [{
     unit: 's',
     /** 触发API */
     api: '/1517/7452525046.json',
-    api_data_callback: `return {
+    api_data_callback: `return data.value>3 && data.value<10 ? {
         value4:data.value*4,
         ...data
-    }
+    }:false
     `,
     item_handler: "",
     valid: true,
@@ -61,9 +76,12 @@ let task = [{
     {
 
         console.log(lib.now(),R.uniq([1,2,2,3,3,4,4,4,5]))
-        axios('/66/18342475c8.json').then(res=>{console.log('回调',res.data)})
+        axios('/66/18342475c8.json').then(res=>{console.log('回调',res.data);
+        rtxMsg({msg:'消息推送回调测试',url:'http://10.8.1.35:100/monitor/'})
+    })
         return data.value
     }
+    return false
     `,
     item_handler: "",
     valid: true,

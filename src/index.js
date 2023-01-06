@@ -36,7 +36,7 @@ const taskHandler = taskItem => {
     }
     const taskFn = async ({ removeTask = false, isComplete = false }) => {
         // 数据触发任务,触发后执行回调
-        let data = await axios(taskItem.api).then(res => res.data.map(apiCallback)).catch(e => {
+        let data = await axios(taskItem.api).then(res => res.data.map(apiCallback).filter(e => e)).catch(e => {
             db.addLog({ taskId: key, title: '任务出错', detail: JSON.stringify(e) })
         })
 
@@ -113,7 +113,7 @@ const initTask = async () => {
 const main = async () => {
 
     let task = await initTask()
-    console.log(task)
+
     // 并发执行所有任务
     let taskIds = task.map(taskHandler)
 
