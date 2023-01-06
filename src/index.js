@@ -32,7 +32,7 @@ const taskHandler = taskItem => {
 
     const taskRunning = () => {
         db.addLog({ taskId: key, title: '开始执行', detail: '' })
-        setTaskStatus({ taskId: key, status: cfg.TASK_STATUS.RUNNING });
+        db.setTaskStatus({ taskId: key, status: cfg.TASK_STATUS.RUNNING });
     }
     const taskFn = async ({ removeTask = false, isComplete = false }) => {
         // 数据触发任务,触发后执行回调
@@ -51,7 +51,7 @@ const taskHandler = taskItem => {
 
         if (isComplete) {
             db.addLog({ taskId: key, title: '执行完毕', detail: '' })
-            setTaskStatus({ taskId: key, status: cfg.TASK_STATUS.COMPLETE });
+            db.setTaskStatus({ taskId: key, status: cfg.TASK_STATUS.COMPLETE });
         }
 
     }
@@ -63,7 +63,9 @@ const taskHandler = taskItem => {
             taskFn({ removeTask: false, isComplete: false })
             taskRunning()
             // 几分钟后触发定时任务执行一次
-            timeFns[key] = setInterval(taskFn, time);
+            timeFns[key] = setInterval(() => {
+                taskFn({ removeTask: false, isComplete: false })
+            }, time);
             console.log(`${taskItem.title}:每隔${time / 1000}秒执行一次：${timeFns[key]}`)
             break;
 
@@ -111,7 +113,7 @@ const initTask = async () => {
 const main = async () => {
 
     let task = await initTask()
-
+    console.log(task)
     // 并发执行所有任务
     let taskIds = task.map(taskHandler)
 

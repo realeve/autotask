@@ -70,14 +70,15 @@ let task = [{
 }]
 
 /** 获取任务列表 */
-module.exports.getTaskList = mock(task, 600)
+module.exports.getTaskList = async () => mock(task, 600)
 
 module.exports.addLog = ({ taskId, title, detail }) => {
 
+    console.log(`添加${taskId}日志：${title}`)
 }
 
 module.exports.setTaskStatus = async ({ taskId, status }) => {
-
+    console.log(`设置${taskId}状态为${status}`)
 }
 
 module.exports.closeAllTask = async () => {
