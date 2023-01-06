@@ -5,79 +5,13 @@ const { axios } = require("./utils/axios");
 const lib = require('./utils/lib')
 
 const fnLib = require('./utils/fnLib')
-
-// 任务配置
-/*
-此部分由前台管理，此处为模拟数据，支持以下模式：
-
-setInterval （数据搬运的场景、间隔多长时间执行一次监测任务）
-setTimeout
-立即执行
-定时执行（如每天几点开始执行一次、每月几号几点执行）
-指定在未来的某个时间执行一次、多次
-
-*/
-let task = [{
-    id: 1,
-    title: '自动同步数据',
-    author: 'develop',
-    time_type: 'interval',
-    time: '10',
-    unit: 's',
-    /** 触发API */
-    api: '/1614/686828a245.json',
-    api_data_callback: `return {
-        value2:data.value*2,
-        ...data
-    }
-    `,
-    item_handler: "",
-    valid: true,
-}, {
-    id: 2,
-    title: '获取品种列表',
-    author: 'develop',
-    time_type: 'timeout',
-    time: '6',
-    unit: 's',
-    /** 触发API */
-    api: '/1517/7452525046.json',
-    api_data_callback: `return {
-        value4:data.value*4,
-        ...data
-    }
-    `,
-    item_handler: "",
-    valid: true,
-}, {
-    id: 3,
-    title: '只执行一次的任务',
-    author: 'develop',
-    time_type: 'once',
-    time: '0',
-    unit: 's',
-    /** 触发API */
-    api: '/1517/7452525046.json',
-    api_data_callback: `
-    console.log(data.value)
-    if(data.value>10)
-    {
-
-        console.log(lib.now(),R.uniq([1,2,2,3,3,4,4,4,5]))
-        axios('/66/18342475c8.json').then(res=>{console.log('回调',res.data)})
-        return data.value
-    }
-    `,
-    item_handler: "",
-    valid: true,
-}]
-
-
-
+const db = require('./utils/db')
+const cfg = require('./utils/config')
 
 // 以taskId为key记录每个定时任务的执行状态
 
 const timeFns = {}
+
 
 /**
  * 执行一条任务
@@ -96,9 +30,16 @@ const taskHandler = taskItem => {
     // 数据获取后对每条数据处理的回调
     let apiCallback = fnLib.getFn(taskItem.api_data_callback)
 
-    const taskFn = async (removeTask = false) => {
+    const taskRunning = () => {
+        db.addLog({ taskId: key, title: '开始执行', detail: '' })
+        setTaskStatus({ taskId: key, status: cfg.TASK_STATUS.RUNNING });
+    }
+    const taskFn = async ({ removeTask = false, isComplete = false }) => {
         // 数据触发任务,触发后执行回调
-        let data = await axios(taskItem.api).then(res => res.data.map(apiCallback))
+        let data = await axios(taskItem.api).then(res => res.data.map(apiCallback)).catch(e => {
+            db.addLog({ taskId: key, title: '任务出错', detail: JSON.stringify(e) })
+        })
+
         console.log(data)
 
         // 执行完后是否移除该任务
@@ -107,13 +48,20 @@ const taskHandler = taskItem => {
             // 移除key
             Reflect.deleteProperty(timeFns, key)
         }
+
+        if (isComplete) {
+            db.addLog({ taskId: key, title: '执行完毕', detail: '' })
+            setTaskStatus({ taskId: key, status: cfg.TASK_STATUS.COMPLETE });
+        }
+
     }
 
     switch (taskItem.time_type) {
         // 定时执行任务
         case 'interval':
             // 先执行一次任务
-            taskFn()
+            taskFn({ removeTask: false, isComplete: false })
+            taskRunning()
             // 几分钟后触发定时任务执行一次
             timeFns[key] = setInterval(taskFn, time);
             console.log(`${taskItem.title}:每隔${time / 1000}秒执行一次：${timeFns[key]}`)
@@ -121,16 +69,16 @@ const taskHandler = taskItem => {
 
         // 一定时间后立即执行一次
         case 'timeout':
+            taskRunning()
             timeFns[key] = setTimeout(() => {
-                taskFn(true);
-
+                taskFn({ removeTask: true, isComplete: true });
             }, time);
             console.log(`${taskItem.title}:${time / 1000}秒后执行一次：${timeFns[key]}`)
             break;
 
         // 立即执行一次
         case 'once':
-            taskFn(true);
+            taskFn({ removeTask: true, isComplete: true });
             break;
     }
 
@@ -151,9 +99,22 @@ const closeTask = key => {
     Reflect.deleteProperty(timeFns, key)
 }
 
-const handler = async () => {
+const initTask = async () => {
+    // step1.关闭运行中的任务
+    let runningTask = await db.closeAllTask()
+    runningTask.map(closeTask)
+
+    // step2.获取任务列表
+    return db.getTaskList()
+}
+
+const main = async () => {
+
+    let task = await initTask()
+
     // 并发执行所有任务
     let taskIds = task.map(taskHandler)
+
     // 11秒后关闭某个指定的任务
     setTimeout(() => {
         console.log(timeFns)
@@ -162,4 +123,4 @@ const handler = async () => {
     }, 11 * 1000);
 }
 
-handler()
+main()
