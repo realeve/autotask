@@ -83,15 +83,15 @@ let task = [{
 
         console.log(lib.now(),R.uniq([1,2,2,3,3,4,4,4,5]))
         axios('/66/18342475c8.json').then(res=>{console.log('回调',res.data);
-        rtxMsg({msg:'消息推送回调测试',url:'http://10.8.1.35:100/monitor/'})
-    })
-        return data.value
+            rtxMsg({msg:'消息推送回调测试',url:'http://10.8.1.35:100/monitor/'})
+        })
+        return data
     }
     return false
     `,
     item_callback: {
         type: 'api',
-        callback: '/test/234.json'
+        callback: '/1430/d55a6e3d81.json'
     },
     valid: true,
 }]

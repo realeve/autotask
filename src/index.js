@@ -22,10 +22,13 @@ const getItemCallback = taskItem => {
                 str = 'return data'
             }
             itemCallback = fnLib.getFn(str)
-        } else if (type == 'db') {
+        } else if (type == 'api') {
             itemCallback = (params) => axios({
                 url: str,
                 params
+            }).catch(e => {
+                console.log('error', e)
+                console.log({ str, params })
             })
         }
 
